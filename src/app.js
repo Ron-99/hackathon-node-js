@@ -1,13 +1,13 @@
-const express = require('express');
+const express = require("express");
 
-const TwitterService = require('./twitter.service');
-const DbService = require('./db.service');
+const TwitterService = require("./twitter.service");
+const DbService = require("./db.service");
 
 const app = express();
 
 app.use(express.json());
 
-app.get('/listaEventosPorEmpresa', (request, response) => {
+app.get("/listaEventosPorEmpresa", (request, response) => {
   /*
     entrada:
     {
@@ -43,10 +43,21 @@ app.get('/listaEventosPorEmpresa', (request, response) => {
     ]
   */
 
+  TwitterService.listarTweetsHitBRA(request.body)
+    .then(eventos => {
+      response.status(200).send(eventos);
+    })
+    .catch(erro => {
+      console.error("Erro so listar eventos", erro);
+      response
+        .status(500)
+        .send("Ocorreu um erro ao listar os eventos no banco de dados");
+    });
+
   response.send();
 });
 
-app.get('/listaEventosPorData', (request, response) => {
+app.get("/listaEventosPorData", (request, response) => {
   /*
     entrada:
     {
@@ -87,7 +98,7 @@ app.get('/listaEventosPorData', (request, response) => {
   response.send();
 });
 
-app.get('/listaEventosPorPessoa', (request, response) => {
+app.get("/listaEventosPorPessoa", (request, response) => {
   /*
     entrada:
     {
@@ -123,7 +134,7 @@ app.get('/listaEventosPorPessoa', (request, response) => {
   response.send();
 });
 
-app.get('/listaEventosRepetitivos', (request, response) => {
+app.get("/listaEventosRepetitivos", (request, response) => {
   /*
     entrada:
     {
@@ -148,7 +159,7 @@ app.get('/listaEventosRepetitivos', (request, response) => {
   response.send();
 });
 
-app.get('/listaHorarios', (request, response) => {
+app.get("/listaHorarios", (request, response) => {
   /*
     entrada:
     {
@@ -176,29 +187,29 @@ app.get('/listaHorarios', (request, response) => {
 });
 
 const server = app.listen(3000, () => {
-  console.log('Servidor iniciado');
+  console.log("Servidor iniciado");
 
   DbService.conectar({
-    host: 'localhost', 
-    porta: 3306, 
-    banco: 'pet_shop', 
-    usuario: 'root', 
-    senha: '123456'
+    host: "localhost",
+    porta: 3306,
+    banco: "EVENTOS",
+    usuario: "root",
+    senha: "123456"
   })
     .then(() => {
-      console.log('Conexão com banco de dados estabelecida');
+      console.log("Conexão com banco de dados estabelecida");
 
       TwitterService.newClient({
-        consumer_key: 'URKM9MWFpwZgKfbxwsGqNE0MT',
-        consumer_secret: 'HXOZCQPhv2MhAaLSj07Ss2ODhQh64IObDYstYUwG8EyLzYQOFD',
-        access_token_key: '187744844-EHU5axWK55BmRappDWkoVlI6eSpfZ3NV1W7z2kMJ',
-        access_token_secret: 'DHx58GbWYrC87Fs026RitPaNYyojNJ8L8d47MvmRbj9uh'
+        consumer_key: "URKM9MWFpwZgKfbxwsGqNE0MT",
+        consumer_secret: "HXOZCQPhv2MhAaLSj07Ss2ODhQh64IObDYstYUwG8EyLzYQOFD",
+        access_token_key: "187744844-EHU5axWK55BmRappDWkoVlI6eSpfZ3NV1W7z2kMJ",
+        access_token_secret: "DHx58GbWYrC87Fs026RitPaNYyojNJ8L8d47MvmRbj9uh"
       });
-      console.log('Client do Twitter criado');
+      console.log("Client do Twitter criado");
 
       TwitterService.listarTweetsHitBRA()
-        .then(tweets => {
-          console.log(`Recebido ${tweets.length} para processar`);
+        .then(tweet => {
+          console.log(`Recebido ${tweet.length} para processar`);
           /*
             *** Implemente aqui sua lógica para ler o tweets ***
             
@@ -218,14 +229,82 @@ const server = app.listen(3000, () => {
               ]
             }
           */
+
+          function ValidarData(Data) {
+            let dia = Data.substring(0, 2);
+            let mes = Data.substring(3, 5);
+            let ano = Data.substring(6, Data.length);
+          }
+          let tweets = {};
+          let categoria = [
+            "festa",
+            "churrasco",
+            "reunião",
+            "férias",
+            "reuniao",
+            "ferias"
+          ];
+
+          tweet.forEach((element, index) => {
+            let texto = element.texto.replace(/\s{2,}/g, " ").split(" ");
+            let validacao = [];
+
+            validacao.push(texto.includes("#hackathonhitbra"));
+            validacao.push(texto.includes("hitbra"));
+            let aux = [];
+            categoria.forEach((element2, index2) => {
+              aux.push(texto.includes(element2));
+            });
+
+            validacao.push(aux.includes(true));
+
+            /*tweet.push({
+                nome = texto[1],
+                categoria = texto[2],
+                data:texto[3],
+                hora:
+              })*/
+            let descricao = "";
+            let pessoas = [];
+            for (let i = 5; i < texto.length; i++) {
+              if (texto[i].indexOf("*") == -1) descricao += texto[i] + " ";
+              else {
+                pessoas.push(texto[i]);
+              }
+            }
+            tweets.nomeEmpresa = texto[1];
+            tweets.categoria = texto[2];
+            tweets.data = texto[3];
+            tweets.hora = texto[4];
+            tweets.descricao = descricao;
+            tweets.nomePessoa = pessoas;
+            
+
+            if (!validacao.includes(false)) {
+              DbService.inserirTweets(tweets)
+                .then(tweet => {
+                  response.status(201).send(tweet);
+                })
+                .catch(erro => {
+                  console.error("Erro ao inserir cliente", erro);
+                  response
+                    .status(500)
+                    .send(
+                      "Ocorreu um erro ao inserir o cliente no banco de dados"
+                    );
+                });
+            }
+          });
         })
         .catch(erro => {
-          console.error('Erro ao listar Tweets da Hit-BRA:', erro);
+          console.error("Erro ao listar Tweets da Hit-BRA:", erro);
           server.close();
         });
     })
     .catch(erro => {
-      console.log('Devido erro ao conectar com o banco de dados a aplicação será encerrada');
+      console.log(
+        "Devido erro ao conectar com o banco de dados a aplicação será encerrada"
+      );
       console.error(erro);
       server.close();
     });

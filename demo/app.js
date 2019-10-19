@@ -67,8 +67,8 @@ const server = app.listen(3000, () => {
     host: 'localhost', 
     porta: 3306, 
     banco: 'pet_shop', 
-    usuario: 'aplicacao', 
-    senha: 'senhaaplicacao'
+    usuario: 'root', 
+    senha: '123456'
   })
     .catch(erro => {
       console.log('Devido erro ao conectar com o banco de dados a aplicação será encerrada');

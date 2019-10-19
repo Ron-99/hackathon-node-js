@@ -29,10 +29,14 @@ function listarTweetsHitBRA(userId) {
             hashtags: tweet.entities.hashtags.map(hashtag => hashtag.text)
           }
         })
+
+        
       );
+     
   } else {
     try {
-      return Promise.resolve(require('./../tweets.json'));
+      return Promise.resolve(require('./../tweets.json'))
+
     } catch(e) {
       const erro = '*** Atenção, seu JSON pode estar inválido ou você apagou ou renomeou o arquivo "tweets.json" da sua pasta raíz!! ***';
       return Promise.reject(erro);
